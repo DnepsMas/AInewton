@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cyber Newton OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <script src="https://unpkg.com/mathlive"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #0f1115;
+            --accent-cyan: #00f3ff;
+            --accent-pink: #ff0055;
+            --text-main: #e0e0e0;
+            --kb-bg: #111;
+            --key-bg: #1f2228;
+            --key-text: #ccc;
+        }
+
+        body {
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'JetBrains Mono', monospace !important;
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            background-image: radial-gradient(circle at 50% 50%, #111 0%, #050505 100%); /* 加了一点背景光晕 */
+        }
+
+        /* === 1. 登录层 === */
+        #login-overlay {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(5, 5, 5, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .cyber-card {
+            width: 90%; max-width: 400px;
+            background: rgba(15, 17, 21, 0.9); border: 1px solid #333; padding: 2rem;
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.05); position: relative; overflow: hidden;
+            border-radius: 12px;
+        }
+        .cyber-card::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+            animation: scan 3s linear infinite;
+        }
+        @keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+        .glitch-text {
+            font-family: 'Orbitron', sans-serif; font-size: 2rem; font-weight: 700; color: white;
+            text-shadow: 2px 2px 0px var(--accent-pink), -2px -2px 0px var(--accent-cyan);
+            margin-bottom: 2rem; text-align: center; letter-spacing: 2px;
+        }
+        .cyber-input {
+            width: 100%; background: #080808; border: 1px solid #333; color: var(--accent-cyan);
+            padding: 12px; margin-bottom: 15px; font-family: 'JetBrains Mono', monospace;
+            transition: 0.3s; outline: none; border-radius: 4px;
+        }
+        .cyber-input:focus { border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.15); }
+        .cyber-btn {
+            width: 100%; padding: 12px; margin-top: 10px;
+            background: rgba(0, 243, 255, 0.1); border: 1px solid var(--accent-cyan); color: var(--accent-cyan);
+            font-weight: bold; cursor: pointer; transition: 0.2s; border-radius: 4px;
+        }
+        .cyber-btn:hover { background: var(--accent-cyan); color: #000; box-shadow: 0 0 20px rgba(0, 243, 255, 0.4); }
+        .cyber-btn.secondary { border-color: var(--accent-pink); color: var(--accent-pink); background: rgba(255, 0, 85, 0.05); }
+        .cyber-btn.secondary:hover { background: var(--accent-pink); color: white; box-shadow: 0 0 20px rgba(255, 0, 85, 0.4); }
+
+        /* === 2. 界面布局 === */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(15, 17, 21, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        .status-dot { width: 8px; height: 8px; background: #00ff00; border-radius: 50%; box-shadow: 0 0 8px #00ff00; }
+
+        /* 聊天区 */
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px 24px; scroll-behavior: smooth; }
+
+        /* === 3. 气泡式消息行美化 === */
+        .msg-row {
+            display: flex; gap: 1rem; margin-bottom: 1.5rem; /* 增加行间距 */
+            animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            align-items: flex-start; width: 100%;
+        }
+
+        /* AI (牛顿) - 左侧 */
+        .msg-row.ai {
+            flex-direction: row; justify-content: flex-start;
+        }
+
+        /* User (用户) - 右侧 */
+        .msg-row.user {
+            flex-direction: row-reverse; justify-content: flex-start;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 头像美化 */
+        .avatar-img {
+            width: 42px; height: 42px; object-fit: cover; border-radius: 8px; /* 圆角头像 */
+            border: 1px solid #333; flex-shrink: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .user .avatar-img {
+            animation: pulse-border 3s infinite ease-in-out;
+            border-color: var(--accent-cyan);
+        }
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 243, 255, 0.2); }
+            50% { box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
+        }
+
+        /* === 气泡核心样式 === */
+        .msg-content {
+            flex: 1; max-width: 85%; /* 不占满整行，形成气泡感 */
+            padding: 12px 18px;
+            font-size: 0.95rem; line-height: 1.7;
+            overflow-wrap: break-word;
+            position: relative;
+        }
+
+        /* AI 气泡样式 */
+        .ai .msg-content {
+            background: rgba(30, 32, 35, 0.6); /* 深色磨砂 */
+            border: 1px solid rgba(255,255,255,0.08);
+            border-left: 2px solid var(--accent-cyan); /* 左侧青色装饰线 */
+            border-radius: 0 12px 12px 12px; /* 左上角直角，指向头像 */
+            color: #ccc;
+        }
+
+        /* User 气泡样式 */
+        .user .msg-content {
+            background: linear-gradient(135deg, rgba(0, 61, 61, 0.3), rgba(0, 0, 0, 0.4)); /* 深青色渐变 */
+            border: 1px solid rgba(0, 243, 255, 0.15);
+            border-right: 2px solid var(--accent-cyan); /* 右侧装饰线 */
+            border-radius: 12px 0 12px 12px; /* 右上角直角，指向头像 */
+            color: var(--accent-cyan);
+
+            /* 强制内容右对齐 */
+            text-align: right !important;
+            display: flex; flex-direction: column; align-items: flex-end;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 修复内部元素对齐 */
+        .user .msg-content p, .user .katex-display { text-align: right !important; width: 100%; margin: 0; }
+        .user .katex-display > .katex { text-align: right !important; display: block; }
+        .user .katex-html { width: 100%; text-align: right; }
+
+        /* 公式通用 */
+        .katex { font-size: 1.1em !important; }
+        .ai .katex { color: #fff !important; }
+        .user .katex { color: #aee !important; text-shadow: 0 0 5px rgba(0, 243, 255, 0.3); }
+
+        /* 光标特效 */
+        /* 静态文字 */
+        .cursor-waiting::before {
+            content: '推演中...'; color: var(--accent-cyan); font-weight: bold; font-size: 0.9em; display: inline-block;
+        }
+        #welcome-text.cursor-waiting::before { content: '读取记忆核心...'; }
+        /* 闪烁光标 */
+        .cursor-waiting::after {
+            content: '▋'; color: var(--accent-cyan); font-weight: bold; font-size: 0.9em; display: inline-block; margin-left: 5px; animation: blink 1s step-end infinite;
+        }
+        .cursor-typing::after {
+            content: '▋'; color: var(--accent-cyan); display: inline-block; margin-left: 2px; animation: blink 0.5s step-end infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* === 4. 底部输入 === */
+        .input-wrapper {
+            background: rgba(15, 17, 21, 0.95); border-top: 1px solid #333; padding: 16px; z-index: 50;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+        }
+        math-field {
+            background: #000; color: white; border: 1px solid #333; padding: 12px; font-size: 1.3rem; border-radius: 8px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        math-field:focus-within { border-color: var(--accent-cyan); box-shadow: 0 0 15px rgba(0, 243, 255, 0.1); }
+        math-field::part(virtual-keyboard-toggle) { display: none; }
+
+        /* === 5. 键盘 (保持原有功能，微调样式) === */
+        #keyboard-wrapper { background: var(--kb-bg); height: 0; overflow: hidden; transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; border-top: 1px solid #333; }
+        .kb-open { height: 300px !important; } .kb-closed { height: 0 !important; }
+        .kb-tabs { display: flex; background: #080808; border-bottom: 1px solid #222; }
+        .kb-tab-btn { flex: 1; padding: 12px; text-align: center; color: #666; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; }
+        .kb-tab-btn.active { color: var(--accent-cyan); background: var(--kb-bg); border-top: 2px solid var(--accent-cyan); }
+        .kb-views { flex: 1; padding: 6px; } .kb-view { display: none; height: 100%; } .kb-view.active { display: block; }
+        .kb-btn { background: var(--key-bg); color: var(--key-text); margin: 3px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; cursor: pointer; transition: all 0.1s; box-shadow: 0 3px 0 #000; border: 1px solid rgba(255,255,255,0.05); }
+        .kb-btn:active { transform: translateY(3px); box-shadow: none; color: var(--accent-cyan); border-color: var(--accent-cyan); }
+        .k-dark { background: #15171a; color: #888; font-size: 0.95rem; }
+        .k-blue { background: rgba(0, 243, 255, 0.1); color: var(--accent-cyan); border: 1px solid rgba(0, 243, 255, 0.3); }
+        .grid-main { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(4, 1fr); height: 100%; gap: 4px; }
+    </style>
+</head>
+<body>
+
+    <div id="login-overlay">
+        <div class="cyber-card">
+            <h1 class="glitch-text">NEWTON.SYS</h1>
+            <p class="text-gray-500 text-center mb-6 text-xs font-mono">验证身份以连接记忆核心</p>
+            <input type="text" id="username" class="cyber-input" placeholder="用户名 (User ID)" autocomplete="off">
+            <input type="password" id="password" class="cyber-input" placeholder="口令 (Passcode)">
+            <button onclick="handleLogin()" class="cyber-btn">接入系统</button>
+            <button onclick="handleRegister()" class="cyber-btn secondary">注册身份</button>
+            <p id="auth-msg" class="mt-4 text-xs text-center text-red-500 font-mono min-h-[20px]"></p>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div class="flex items-center gap-3">
+            <div class="status-dot"></div>
+            <div class="font-bold tracking-widest text-sm text-gray-300">赛博牛顿 <span class="text-xs text-gray-600" id="user-display">// 离线</span></div>
+        </div>
+        <button onclick="logout()" class="text-xs text-red-500 hover:text-red-400 border border-red-900/50 px-3 py-1 rounded hover:bg-red-900/20 transition">
+            [ 断开连接 ]
+        </button>
+    </div>
+
+    <div id="chat-box">
+        <div class="msg-row ai" id="welcome-row">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">
+            <div class="msg-content cursor-waiting" id="welcome-text"></div>
+        </div>
+    </div>
+
+    <div class="input-wrapper">
+        <div class="flex flex-col gap-3">
+            <math-field id="math-input" virtual-keyboard-mode="off" inputmode="none" placeholder="输入数学公式...">
+            </math-field>
+
+            <div class="flex justify-between items-center">
+                <button onclick="toggleKeyboard()" class="text-gray-500 hover:text-cyan-400 text-sm flex items-center gap-2 transition font-mono">
+                    <i class="fas fa-keyboard"></i> <span id="kb-toggle-text">展开键盘</span>
+                </button>
+                <button onclick="sendMessage()" class="bg-cyan-900/20 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-700/50 px-6 py-2 text-sm font-bold transition rounded shadow-[0_0_10px_rgba(0,255,255,0.05)] hover:shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+                    执行 (EXECUTE)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="keyboard-wrapper">
+        <div class="kb-tabs">
+            <div class="kb-tab-btn active" onclick="switchTab('main')">主键盘</div>
+            <div class="kb-tab-btn" onclick="switchTab('abc')">变量</div>
+            <div class="kb-tab-btn" onclick="switchTab('func')">函数</div>
+            <div class="kb-tab-btn" onclick="switchTab('sym')">符号</div>
+        </div>
+        <div class="kb-views">
+             <div id="view-main" class="kb-view active">
+                <div class="grid-main">
+                    <div class="kb-btn italic" onclick="ins('x')">x</div> <div class="kb-btn italic" onclick="ins('y')">y</div> <div class="kb-btn k-dark" onclick="cmd('insert', '^2')">a²</div> <div class="kb-btn k-dark" onclick="cmd('insert', '^')">aᵇ</div> <div class="kb-btn" onclick="ins('7')">7</div> <div class="kb-btn" onclick="ins('8')">8</div> <div class="kb-btn" onclick="ins('9')">9</div> <div class="kb-btn k-dark" onclick="cmd('insert', '\\frac{#@}{#?}')">÷</div> <div class="kb-btn k-dark" onclick="cmd('deleteBackward')">⌫</div> <div class="kb-btn k-dark" style="color:#ff5555" onclick="cmd('performMemclear')">C</div>
+                    <div class="kb-btn k-dark" onclick="ins('(')">(</div> <div class="kb-btn k-dark" onclick="ins(')')">)</div> <div class="kb-btn k-dark" onclick="ins('<')">&lt;</div> <div class="kb-btn k-dark" onclick="ins('>')">&gt;</div> <div class="kb-btn" onclick="ins('4')">4</div> <div class="kb-btn" onclick="ins('5')">5</div> <div class="kb-btn" onclick="ins('6')">6</div> <div class="kb-btn k-dark" onclick="ins('\\times')">×</div> <div class="kb-btn k-dark" onclick="ins('/')">/</div> <div class="kb-btn k-dark" onclick="cmd('moveToPreviousChar')">←</div>
+                    <div class="kb-btn k-dark" onclick="ins('|')">|a|</div> <div class="kb-btn k-dark" onclick="cmd('insert', '\\sqrt')">√</div> <div class="kb-btn k-dark" onclick="ins('\\pi')">π</div> <div class="kb-btn k-dark" onclick="ins('e')">e</div> <div class="kb-btn" onclick="ins('1')">1</div> <div class="kb-btn" onclick="ins('2')">2</div> <div class="kb-btn" onclick="ins('3')">3</div> <div class="kb-btn k-dark" onclick="ins('+')">+</div> <div class="kb-btn k-dark" onclick="ins('-')">-</div> <div class="kb-btn k-dark" onclick="cmd('moveToNextChar')">→</div>
+                    <div class="kb-btn k-dark font-bold" onclick="switchTab('abc')">ABC</div> <div class="kb-btn k-dark font-bold" onclick="switchTab('func')">f(x)</div> <div class="kb-btn k-dark" onclick="ins(',')">,</div> <div class="kb-btn k-dark" onclick="ins('!')">!</div> <div class="kb-btn" onclick="ins('0')">0</div> <div class="kb-btn" onclick="ins('.')">.</div> <div class="kb-btn" onclick="ins('=')">=</div> <div class="kb-btn k-blue" style="grid-column: span 3" onclick="sendMessage()">回车</div>
+                </div>
+            </div>
+            <div id="view-abc" class="kb-view">
+                 <div class="flex flex-col h-full justify-center gap-1">
+                    <div class="flex gap-1 flex-1"> <div class="kb-btn flex-1" onclick="ins('q')">q</div> <div class="kb-btn flex-1" onclick="ins('w')">w</div> <div class="kb-btn flex-1" onclick="ins('e')">e</div> <div class="kb-btn flex-1" onclick="ins('r')">r</div> <div class="kb-btn flex-1" onclick="ins('t')">t</div> <div class="kb-btn flex-1" onclick="ins('y')">y</div> <div class="kb-btn flex-1" onclick="ins('u')">u</div> <div class="kb-btn flex-1" onclick="ins('i')">i</div> <div class="kb-btn flex-1" onclick="ins('o')">o</div> <div class="kb-btn flex-1" onclick="ins('p')">p</div> </div>
+                    <div class="flex gap-1 flex-1 px-4"> <div class="kb-btn flex-1" onclick="ins('a')">a</div> <div class="kb-btn flex-1" onclick="ins('s')">s</div> <div class="kb-btn flex-1" onclick="ins('d')">d</div> <div class="kb-btn flex-1" onclick="ins('f')">f</div> <div class="kb-btn flex-1" onclick="ins('g')">g</div> <div class="kb-btn flex-1" onclick="ins('h')">h</div> <div class="kb-btn flex-1" onclick="ins('j')">j</div> <div class="kb-btn flex-1" onclick="ins('k')">k</div> <div class="kb-btn flex-1" onclick="ins('l')">l</div> </div>
+                    <div class="flex gap-1 flex-1"> <div class="kb-btn k-dark flex-[1.5]" onclick="switchTab('main')">123</div> <div class="kb-btn flex-1" onclick="ins('z')">z</div> <div class="kb-btn flex-1" onclick="ins('x')">x</div> <div class="kb-btn flex-1" onclick="ins('c')">c</div> <div class="kb-btn flex-1" onclick="ins('v')">v</div> <div class="kb-btn flex-1" onclick="ins('b')">b</div> <div class="kb-btn flex-1" onclick="ins('n')">n</div> <div class="kb-btn flex-1" onclick="ins('m')">m</div> <div class="kb-btn k-dark flex-[1.5]" onclick="cmd('deleteBackward')">⌫</div> </div>
+                     <div class="flex gap-1 flex-1"> <div class="kb-btn k-dark flex-[2]" onclick="switchTab('sym')">符号</div> <div class="kb-btn flex-[4]" onclick="ins(' ')">空格</div> <div class="kb-btn k-blue flex-[2]" onclick="sendMessage()">回车</div> </div>
+                 </div>
+            </div>
+            <div id="view-func" class="kb-view">
+                <div class="grid-main" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="kb-btn k-dark" onclick="ins('\\sin')">sin</div> <div class="kb-btn k-dark" onclick="ins('\\cos')">cos</div> <div class="kb-btn k-dark" onclick="ins('\\tan')">tan</div> <div class="kb-btn k-dark" onclick="cmd('insert', '\\lim_{x \\to \\infty}')">lim</div>
+                    <div class="kb-btn k-dark" onclick="ins('\\arcsin')">sin⁻¹</div> <div class="kb-btn k-dark" onclick="ins('\\arccos')">cos⁻¹</div> <div class="kb-btn k-dark" onclick="ins('\\arctan')">tan⁻¹</div> <div class="kb-btn k-dark" onclick="ins('\\int')">∫</div>
+                    <div class="kb-btn k-dark" onclick="ins('\\ln')">ln</div> <div class="kb-btn k-dark" onclick="ins('\\log')">log</div> <div class="kb-btn k-dark" onclick="ins('e^x')">eˣ</div> <div class="kb-btn k-dark" onclick="cmd('insert', '\\sum')">Σ</div>
+                    <div class="kb-btn k-dark" style="background:#333; color:white;" onclick="switchTab('main')">返回</div> <div class="kb-btn k-dark" onclick="ins('\\sqrt[n]{x}')">ⁿ√</div> <div class="kb-btn k-dark" onclick="ins('!')">!</div> <div class="kb-btn k-dark" onclick="ins('\\%')">%</div>
+                </div>
+            </div>
+             <div id="view-sym" class="kb-view">
+                <div class="grid-main">
+                     <div class="kb-btn" onclick="ins('\\alpha')">α</div> <div class="kb-btn" onclick="ins('\\beta')">β</div> <div class="kb-btn" onclick="ins('\\gamma')">γ</div> <div class="kb-btn" onclick="ins('\\delta')">δ</div> <div class="kb-btn" onclick="ins('\\epsilon')">ε</div> <div class="kb-btn" onclick="ins('\\zeta')">ζ</div> <div class="kb-btn" onclick="ins('\\eta')">η</div> <div class="kb-btn" onclick="ins('\\theta')">θ</div> <div class="kb-btn" onclick="ins('\\iota')">ι</div> <div class="kb-btn k-dark" onclick="cmd('deleteBackward')">⌫</div>
+                     <div class="kb-btn" onclick="ins('\\kappa')">κ</div> <div class="kb-btn" onclick="ins('\\lambda')">λ</div> <div class="kb-btn" onclick="ins('\\mu')">μ</div> <div class="kb-btn" onclick="ins('\\nu')">ν</div> <div class="kb-btn" onclick="ins('\\xi')">ξ</div> <div class="kb-btn" onclick="ins('\\pi')">π</div> <div class="kb-btn" onclick="ins('\\rho')">ρ</div> <div class="kb-btn" onclick="ins('\\sigma')">σ</div> <div class="kb-btn" onclick="ins('\\tau')">τ</div> <div class="kb-btn" onclick="ins('\\phi')">φ</div>
+                     <div class="kb-btn" onclick="ins('\\infty')">∞</div> <div class="kb-btn" onclick="ins('\\partial')">∂</div> <div class="kb-btn" onclick="ins('\\nabla')">∇</div> <div class="kb-btn" onclick="ins('\\pm')">±</div> <div class="kb-btn" onclick="ins('\\mp')">∓</div> <div class="kb-btn" onclick="ins('\\neq')">≠</div> <div class="kb-btn" onclick="ins('\\approx')">≈</div> <div class="kb-btn" onclick="ins('\\sim')">∼</div> <div class="kb-btn" onclick="ins('\\propto')">∝</div> <div class="kb-btn k-blue" onclick="sendMessage()">回车</div>
+                     <div class="kb-btn k-dark" style="grid-column: span 10" onclick="switchTab('main')">返回主键盘</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mf = document.getElementById('math-input');
+        const chatBox = document.getElementById('chat-box');
+        const kbWrapper = document.getElementById('keyboard-wrapper');
+        const kbText = document.getElementById('kb-toggle-text');
+
+        mf.addEventListener('keydown', (evt) => {
+            if (evt.key === 'Enter' && !evt.shiftKey) {
+                evt.preventDefault();
+                sendMessage();
+            }
+        });
+
+        let currentUser = null;
+        let hostname = window.location.hostname || "localhost";
+        const apiBase = `http://10.122.251.171:5050`;
+
+        function switchTab(t) {
+            document.querySelectorAll('.kb-view').forEach(e=>e.classList.remove('active'));
+            document.querySelectorAll('.kb-tab-btn').forEach(e=>e.classList.remove('active'));
+            document.getElementById(`view-${t}`).classList.add('active');
+            const idx = t=='main'?0:t=='abc'?1:t=='func'?2:3;
+            document.querySelectorAll('.kb-tab-btn')[idx].classList.add('active');
+        }
+
+        function toggleKeyboard() {
+            if (kbWrapper.classList.contains('kb-open')) {
+                kbWrapper.classList.remove('kb-open'); kbWrapper.classList.add('kb-closed'); kbText.innerText = "展开键盘";
+            } else {
+                kbWrapper.classList.remove('kb-closed'); kbWrapper.classList.add('kb-open'); kbText.innerText = "收起键盘"; scrollToBottom();
+            }
+        }
+        mf.addEventListener('focus', () => { kbWrapper.classList.remove('kb-closed'); kbWrapper.classList.add('kb-open'); kbText.innerText = "收起键盘"; });
+
+        function ins(t) { mf.executeCommand('insert', t); }
+        function cmd(c, a) { mf.executeCommand(c, a); }
+
+        async function handleLogin() {
+            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
+            if(!u || !p) return showMsg("请输入用户名和密码"); callAuth('/api/login', u, p);
+        }
+        async function handleRegister() {
+            const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
+            if(!u || !p) return showMsg("请输入用户名和密码"); callAuth('/api/register', u, p);
+        }
+        async function callAuth(ep, u, p) {
+            try {
+                const res = await fetch(`${apiBase}${ep}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                const d = await res.json();
+                if(d.success) {
+                    if(ep.includes('register')) showMsg("注册成功，请登录", "#00ff00");
+                    else loginSuccess(u);
+                } else showMsg(d.message);
+            } catch(e) { showMsg("服务器连接失败"); }
+        }
+
+        async function loginSuccess(u) {
+            currentUser = u;
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('user-display').innerText = `// ${u}`;
+
+            const welcomeText = document.getElementById('welcome-text');
+            try {
+                const res = await fetch(`${apiBase}/api/greet`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({userId: u})
+                });
+                const data = await res.json();
+
+                welcomeText.classList.remove('cursor-waiting');
+
+                const text = data.greeting || "欢迎回来。";
+                let i = 0;
+                welcomeText.innerHTML = "";
+
+                function typeWriter() {
+                    if (i < text.length) {
+                        welcomeText.innerHTML += text.charAt(i);
+                        i++;
+                        setTimeout(typeWriter, 30);
+                    } else {
+                         renderMathInElement(welcomeText, {delimiters: [{left: '$$', right: '$$', display: true}]});
+                    }
+                }
+                typeWriter();
+
+            } catch (e) {
+                welcomeText.classList.remove('cursor-waiting');
+                welcomeText.innerText = "系统连接不稳定，但吾依然在此。";
+            }
+        }
+
+        function logout() { location.reload(); }
+        function showMsg(m, c="red") { const el = document.getElementById('auth-msg'); el.style.color=c; el.innerText=m; }
+
+        async function sendMessage() {
+            if (!currentUser) return alert("请先登录");
+            const latex = mf.getValue(); if(!latex) return;
+
+            appendRow('user', latex);
+            mf.setValue('');
+
+            const loadingId = 'ai-loading-' + Date.now();
+            const loadingRow = document.createElement('div');
+            loadingRow.className = 'msg-row ai';
+            loadingRow.id = loadingId;
+            loadingRow.innerHTML = `
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">
+                <div class="msg-content cursor-waiting"></div>
+            `;
+            chatBox.appendChild(loadingRow);
+            scrollToBottom();
+
+            try {
+                const res = await fetch(`${apiBase}/chat`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({message: latex, userId: currentUser})
+                });
+
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let fullText = '';
+
+                const contentDiv = loadingRow.querySelector('.msg-content');
+                let firstChunk = true;
+
+                while(true) {
+                    const {done, value} = await reader.read();
+                    if(done) break;
+
+                    if(firstChunk) {
+                        contentDiv.classList.remove('cursor-waiting');
+                        contentDiv.classList.add('cursor-typing');
+                        firstChunk = false;
+                    }
+
+                    const chunk = decoder.decode(value);
+                    const chars = chunk.split('');
+
+                    for (let char of chars) {
+                        fullText += char;
+                        contentDiv.innerHTML = marked.parse(fullText);
+                        renderMathInElement(contentDiv, {
+                            delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}],
+                            throwOnError: false
+                        });
+                        scrollToBottom();
+                        await new Promise(r => setTimeout(r, 5));
+                    }
+                }
+                contentDiv.classList.remove('cursor-typing');
+
+            } catch(e) {
+                const errDiv = document.getElementById(loadingId).querySelector('.msg-content');
+                errDiv.innerHTML = `<span style="color:red">连接中断: ${e.message}</span>`;
+            }
+        }
+
+        function appendRow(role, text) {
+            const row = document.createElement('div');
+            row.className = `msg-row ${role}`;
+
+            let avatarHTML = '';
+            if(role === 'ai') {
+                avatarHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">`;
+            } else {
+                avatarHTML = `<div class="avatar-img" style="background:rgba(0, 243, 255, 0.1); display:flex; align-items:center; justify-content:center; color:var(--accent-cyan); border:1px solid rgba(0, 243, 255, 0.4); box-shadow:0 0 10px rgba(0, 243, 255, 0.2);">👤</div>`;
+            }
+
+            row.innerHTML = `
+                <div class="avatar-box">${avatarHTML}</div>
+                <div class="msg-content">$$ ${text} $$</div>
+            `;
+
+            chatBox.appendChild(row);
+            renderMathInElement(row, {delimiters: [{left: '$$', right: '$$', display: true}]});
+            scrollToBottom();
+        }
+
+        function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+    </script>
+</body>
+</html>
