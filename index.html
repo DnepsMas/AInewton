@@ -135,17 +135,18 @@
             color: #ccc;
         }
 
-        /* User 气泡样式 */
         .user .msg-content {
-            background: linear-gradient(135deg, rgba(0, 61, 61, 0.3), rgba(0, 0, 0, 0.4)); /* 深青色渐变 */
-            border: 1px solid rgba(0, 243, 255, 0.15);
-            border-right: 2px solid var(--accent-cyan); /* 右侧装饰线 */
-            border-radius: 12px 0 12px 12px; /* 右上角直角，指向头像 */
-            color: var(--accent-cyan);
+            background: linear-gradient(135deg, rgba(0, 61, 61, 0.3), rgba(0, 0, 0, 0.4));
+            border: 1px solid rgba(0, 243, 255, 0.15); border-right: 2px solid var(--accent-cyan);
+            border-radius: 12px 0 12px 12px; color: var(--accent-cyan);
 
-            /* 强制内容右对齐 */
-            text-align: right !important;
-            display: flex; flex-direction: column; align-items: flex-end;
+            /* 🔥 核心修复：允许文本换行 */
+            white-space: pre-wrap;       /* 保留换行符，且允许自动换行 */
+            word-break: break-word;      /* 英文长单词强制换行 */
+            overflow-wrap: anywhere;     /* 防止长公式撑破容器 */
+
+            text-align: left !important; /* 🔥 改为左对齐(或跟随内容)，纯右对齐阅读体验差 */
+            display: block;              /* 只有 block 才能正常换行 */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
@@ -463,16 +464,43 @@
                 avatarHTML = `<div class="avatar-img" style="background:rgba(0, 243, 255, 0.1); display:flex; align-items:center; justify-content:center; color:var(--accent-cyan); border:1px solid rgba(0, 243, 255, 0.4); box-shadow:0 0 10px rgba(0, 243, 255, 0.2);">👤</div>`;
             }
 
+            // 🔥 核心智能逻辑：判断是“纯公式”还是“混合文本”
+            let finalContent = "";
+
+            // 简单判断：如果包含中文，或者包含空格且长度较长，就视为普通文本，不用 $$ 全包起来
+            // 否则（比如 "\int x dx"），视为纯公式，包上 $$ 变大变好看
+            const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+            const looksLikeFormula = /^[\\0-9a-zA-Z\^\+\-\=\*\/\.\(\)\{\}\[\]\s]+$/.test(text); // 仅包含数学字符
+
+            if (!hasChinese && looksLikeFormula) {
+                // 纯公式模式：强制数学渲染
+                finalContent = `$$ ${text} $$`;
+            } else {
+                // 混合模式：解析 Markdown，只渲染其中的公式
+                // 注意：如果用户想在句子里写公式，需要自己打 $$ 或者 \(..),
+                // 但为了方便，我们可以把简单的 LaTeX 符号尝试自动渲染（由 renderMathInElement 处理）
+                finalContent = marked.parse(text);
+            }
+
             row.innerHTML = `
                 <div class="avatar-box">${avatarHTML}</div>
-                <div class="msg-content">$$ ${text} $$</div>
+                <div class="msg-content">${finalContent}</div>
             `;
 
             chatBox.appendChild(row);
-            renderMathInElement(row, {delimiters: [{left: '$$', right: '$$', display: true}]});
+
+            // 渲染数学公式
+            renderMathInElement(row, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "$", right: "$", display: false}
+                ],
+                throwOnError: false
+            });
+
             scrollToBottom();
         }
-
         function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
     </script>
 </body>
