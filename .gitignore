@@ -55,6 +55,8 @@ MANIFEST
 .vscode
 nohup.out
 
-env/
 .vs
+.env
 /users.db
+
+/env
