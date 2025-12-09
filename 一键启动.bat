@@ -8,7 +8,7 @@ echo    🌐 赛博牛顿局域网启动器
 echo ==========================================
 
 :: 1. 检查环境
-if not exist "venv\Scripts\python.exe" (
+if not exist "env\Scripts\python.exe" (
     echo [ERROR] 找不到虚拟环境 env，请先运行 install.bat
     pause
     exit
@@ -16,12 +16,12 @@ if not exist "venv\Scripts\python.exe" (
 
 :: 2. 启动后端 (API 服务 - 端口 5050)
 echo [1/2] 正在启动后端核心 (Port 5050)...
-start "Newton_Backend_API" /min ".\venv\Scripts\python.exe" server.py
+start "Newton_Backend_API" /min ".\env\Scripts\python.exe" server.py
 
 :: 3. 启动前端 (Web 服务 - 端口 8000)
 :: 这就是你想要的那行指令！它把当前文件夹变成一个网站
 echo [2/2] 正在启动网页托管 (Port 8000)...
-start "Newton_Web_Host" /min ".\venv\Scripts\python.exe" -m http.server 8000
+start "Newton_Web_Host" /min ".\env\Scripts\python.exe" -m http.server 8000
 
 :: 4. 提示访问地址
 echo.
