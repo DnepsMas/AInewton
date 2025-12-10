@@ -56,7 +56,8 @@ MANIFEST
 nohup.out
 
 .vs
-.env
 /users.db
 
 /env
+1.bat
+2.bat

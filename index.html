@@ -7,13 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 
     <style>
+        /* 保持原有的所有 CSS 不变，直接复制你原来的 CSS 即可 */
+        /* 为了节省篇幅，这里省略 CSS 部分，请使用你截图中已经调好的完美 CSS */
         :root {
             --bg-color: #050505;
             --panel-bg: #0f1115;
@@ -29,14 +30,13 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             font-family: 'JetBrains Mono', monospace !important;
-            height: 100dvh; /* 手机全屏适配 */
+            height: 100dvh;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             background-image: radial-gradient(circle at 50% 50%, #111 0%, #050505 100%);
         }
 
-        /* === 1. 登录层 === */
         #login-overlay {
             position: fixed;
             inset: 0;
@@ -114,7 +114,6 @@
                 background: rgba(255, 0, 85, 0.05);
             }
 
-        /* === 2. 界面布局 === */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -133,7 +132,6 @@
             box-shadow: 0 0 8px #00ff00;
         }
 
-        /* 聊天区 */
         #chat-box {
             flex: 1;
             overflow-y: auto;
@@ -215,17 +213,16 @@
             border-radius: 0 12px 12px 12px;
             color: #ccc;
         }
-        /* 🔥 修复：用户气泡换行支持 */
+
         .user .msg-content {
             background: linear-gradient(135deg, rgba(0, 61, 61, 0.3), rgba(0, 0, 0, 0.4));
             border: 1px solid rgba(0, 243, 255, 0.15);
             border-right: 2px solid var(--accent-cyan);
             border-radius: 12px 0 12px 12px;
             color: var(--accent-cyan);
-            white-space: pre-wrap; /* 核心：保留换行 */
-            overflow-wrap: anywhere; /* 核心：防止长公式溢出 */
-            text-align: left; /* 推荐左对齐，阅读更舒适 */
-
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            text-align: left;
             display: block;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
@@ -247,7 +244,6 @@
             text-shadow: 0 0 5px rgba(0, 243, 255, 0.3);
         }
 
-        /* 光标特效 */
         .cursor-waiting::before {
             content: '推演中...';
             color: var(--accent-cyan);
@@ -288,12 +284,11 @@
             }
         }
 
-        /* === 4. 底部输入区 (修复手机遮挡) === */
         .input-wrapper {
             background: rgba(15, 17, 21, 0.98);
             border-top: 1px solid #333;
             padding: 12px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom)); /* 核心修复：避开手机底栏 */
+            padding-bottom: calc(12px + env(safe-area-inset-bottom));
             z-index: 50;
             box-shadow: 0 -5px 20px rgba(0,0,0,0.6);
             display: flex;
@@ -338,7 +333,6 @@
                 box-shadow: 0 0 10px rgba(0, 243, 255, 0.15);
             }
 
-        /* === 5. 键盘 === */
         #keyboard-wrapper {
             background: var(--kb-bg);
             height: 0;
@@ -438,7 +432,6 @@
     </style>
 </head>
 <body>
-
     <div id="login-overlay">
         <div class="cyber-card">
             <h1 class="glitch-text">NEWTON.SYS</h1>
@@ -450,24 +443,19 @@
             <p id="auth-msg" class="mt-4 text-xs text-center text-red-500 font-mono min-h-[20px]"></p>
         </div>
     </div>
-
     <div class="top-bar">
         <div class="flex items-center gap-3">
             <div class="status-dot"></div>
             <div class="font-bold tracking-widest text-sm text-gray-300">赛博牛顿 <span class="text-xs text-gray-600" id="user-display">// 离线</span></div>
         </div>
-        <button onclick="logout()" class="text-xs text-red-500 hover:text-red-400 border border-red-900/50 px-3 py-1 rounded hover:bg-red-900/20 transition">
-            [ 断开连接 ]
-        </button>
+        <button onclick="logout()" class="text-xs text-red-500 hover:text-red-400 border border-red-900/50 px-3 py-1 rounded hover:bg-red-900/20 transition">[ 断开连接 ]</button>
     </div>
-
     <div id="chat-box">
         <div class="msg-row ai" id="welcome-row">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">
             <div class="msg-content cursor-waiting" id="welcome-text"></div>
         </div>
     </div>
-
     <div class="input-wrapper">
         <div id="live-preview"></div>
         <textarea id="main-input" placeholder="输入公式或中文..." rows="1"></textarea>
@@ -480,7 +468,6 @@
             </button>
         </div>
     </div>
-
     <div id="keyboard-wrapper">
         <div class="kb-tabs">
             <div class="kb-tab-btn active" onclick="switchTab('main')">主键盘</div>
@@ -508,6 +495,7 @@
         const inputField = document.getElementById('main-input');
         const previewDiv = document.getElementById('live-preview');
 
+        // ... (toggleKeyboard, ins, cmd, login 逻辑与你原版一致，保持不变) ...
         function toggleKeyboard() {
             const isOpen = kbWrapper.classList.contains('kb-open');
             const isMobile = window.innerWidth < 768;
@@ -522,7 +510,6 @@
                 scrollToBottom();
             }
         }
-
         inputField.addEventListener('focus', () => {
             const isMobile = window.innerWidth < 768;
             if (kbWrapper.classList.contains('kb-open') && isMobile) {
@@ -530,7 +517,6 @@
                 kbText.innerHTML = '<i class="fas fa-calculator"></i> 数学键盘';
             }
         });
-
         inputField.addEventListener('input', updatePreview);
         function updatePreview() {
             const raw = inputField.value;
@@ -544,11 +530,9 @@
             });
             try { katex.render(raw, previewDiv, { throwOnError: false, displayMode: false }); } catch (e) { }
         }
-
         inputField.addEventListener('keydown', (evt) => {
             if (evt.key === 'Enter' && !evt.shiftKey) { evt.preventDefault(); sendMessage(); }
         });
-
         function ins(txt) {
             const start = inputField.selectionStart; const end = inputField.selectionEnd; const val = inputField.value;
             inputField.value = val.substring(0, start) + txt + val.substring(end);
@@ -556,7 +540,6 @@
             if (window.innerWidth >= 768) inputField.focus();
             updatePreview();
         }
-
         function cmd(action) {
             if (action === 'backspace') {
                 const start = inputField.selectionStart;
@@ -571,11 +554,9 @@
             if (window.innerWidth >= 768) inputField.focus();
             updatePreview();
         }
-
         let currentUser = null;
         let hostname = window.location.hostname || "localhost";
         const apiBase = `http://${hostname}:5050`;
-
         function switchTab(t) {
             document.querySelectorAll('.kb-view').forEach(e => e.classList.remove('active'));
             document.querySelectorAll('.kb-tab-btn').forEach(e => e.classList.remove('active'));
@@ -583,7 +564,6 @@
             const idx = t == 'main' ? 0 : t == 'abc' ? 1 : t == 'func' ? 2 : 3;
             document.querySelectorAll('.kb-tab-btn')[idx].classList.add('active');
         }
-
         async function handleLogin() {
             const u = document.getElementById('username').value.trim(); const p = document.getElementById('password').value.trim();
             if (!u || !p) return showMsg("请输入用户名和密码"); callAuth('/api/login', u, p);
@@ -605,7 +585,6 @@
                 } else showMsg(d.message);
             } catch (e) { showMsg("服务器连接失败"); }
         }
-
         async function loginSuccess(u) {
             currentUser = u;
             document.getElementById('login-overlay').style.display = 'none';
@@ -623,32 +602,57 @@
                 } typeWriter();
             } catch (e) { welcomeText.classList.remove('cursor-waiting'); welcomeText.innerText = "系统连接不稳定，但吾依然在此。"; }
         }
-
         function logout() { location.reload(); }
         function showMsg(m, c = "red") { const el = document.getElementById('auth-msg'); el.style.color = c; el.innerText = m; }
 
+        function appendRow(role, text) {
+            const row = document.createElement('div');
+            row.className = `msg-row ${role}`;
+            let avatarHTML = '';
+            if (role === 'ai') { avatarHTML = `<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">`; }
+            else { avatarHTML = `<div class="avatar-img" style="background:rgba(0, 243, 255, 0.1); display:flex; align-items:center; justify-content:center; color:var(--accent-cyan); border:1px solid rgba(0, 243, 255, 0.4); box-shadow:0 0 10px rgba(0, 243, 255, 0.2);">👤</div>`; }
+            const hasChinese = /[\u4e00-\u9fa5]/.test(text);
+            const looksLikeFormula = /^[\\0-9a-zA-Z\^\+\-\=\*\/\.\(\)\{\}\[\]\s]+$/.test(text);
+            let finalContent = "";
+            if (!hasChinese && looksLikeFormula) { finalContent = `$$ ${text} $$`; }
+            else { finalContent = marked.parse(text); }
+            row.innerHTML = `<div class="avatar-box">${avatarHTML}</div><div class="msg-content">${finalContent}</div>`;
+            chatBox.appendChild(row);
+            renderMathInElement(row, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false });
+            scrollToBottom();
+        }
+        function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+
+        // ==========================================
+        // 🔥 核心重写：真实的流式接收 (No Fake Buffer)
+        // ==========================================
         async function sendMessage() {
             if (!currentUser) return alert("请先登录");
-            const rawText = inputField.value; if (!rawText) return;
+            const rawText = inputField.value;
+            if (!rawText) return;
 
+            // 1. 用户消息上屏
             appendRow('user', rawText);
             inputField.value = '';
             updatePreview();
 
+            // 2. 创建 AI 消息占位符 (Cursor Waiting)
             const loadingId = 'ai-loading-' + Date.now();
             const loadingRow = document.createElement('div');
             loadingRow.className = 'msg-row ai';
             loadingRow.id = loadingId;
             loadingRow.innerHTML = `
-                    <img src="newton.jpg" class="avatar-img" alt="Newton">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/GodfreyKneller-IsaacNewton-1689.jpg/220px-GodfreyKneller-IsaacNewton-1689.jpg" class="avatar-img" alt="Newton">
                     <div class="msg-content cursor-waiting"></div>
                 `;
             chatBox.appendChild(loadingRow);
             scrollToBottom();
 
             try {
+                // 3. 发起请求
                 const res = await fetch(`${apiBase}/chat`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: rawText, userId: currentUser })
                 });
 
@@ -658,73 +662,44 @@
                 const contentDiv = loadingRow.querySelector('.msg-content');
                 let firstChunk = true;
 
+                // 4. 🔥 真正的流式循环 (直接读取，直接渲染，不缓冲)
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
+
                     if (firstChunk) {
                         contentDiv.classList.remove('cursor-waiting');
                         contentDiv.classList.add('cursor-typing');
                         firstChunk = false;
                     }
-                    const chunk = decoder.decode(value);
-                    const chars = chunk.split('');
-                    for (let char of chars) {
-                        fullText += char;
-                        contentDiv.innerHTML = marked.parse(fullText);
-                        renderMathInElement(contentDiv, {
-                            delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
-                            throwOnError: false
-                        });
-                        scrollToBottom();
-                        await new Promise(r => setTimeout(r, 5));
-                    }
+
+                    // 解码收到的数据块
+                    const chunk = decoder.decode(value, { stream: true });
+                    fullText += chunk;
+
+                    // 实时解析 Markdown (此时暂不渲染公式，只显示源码，保证流畅)
+                    contentDiv.innerHTML = marked.parse(fullText);
+                    scrollToBottom();
                 }
+
+                // 5. 传输结束：统一渲染数学公式
                 contentDiv.classList.remove('cursor-typing');
+                renderMathInElement(contentDiv, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false },
+                        { left: '\\(', right: '\\)', display: false },
+                        { left: '\\[', right: '\\]', display: true }
+                    ],
+                    throwOnError: false
+                });
+
             } catch (e) {
                 const errDiv = document.getElementById(loadingId).querySelector('.msg-content');
                 errDiv.innerHTML = `<span style="color:red">连接中断: ${e.message}</span>`;
+                errDiv.classList.remove('cursor-waiting');
             }
         }
-
-        // 🔥🔥🔥 核心修改的函数 🔥🔥🔥
-        function appendRow(role, text) {
-            const row = document.createElement('div');
-            row.className = `msg-row ${role}`;
-
-            let avatarHTML = '';
-            if (role === 'ai') {
-                avatarHTML = `<img src="newton.jpg" class="avatar-img" alt="Newton">`;
-            } else {
-                avatarHTML = `<div class="avatar-img" style="background:rgba(0, 243, 255, 0.1); display:flex; align-items:center; justify-content:center; color:var(--accent-cyan); border:1px solid rgba(0, 243, 255, 0.4); box-shadow:0 0 10px rgba(0, 243, 255, 0.2);">👤</div>`;
-            }
-
-            // 智能判断：包含中文或非纯符号，就视为普通文本；否则视为纯公式
-            const hasChinese = /[\u4e00-\u9fa5]/.test(text);
-            const looksLikeFormula = /^[\\0-9a-zA-Z\^\+\-\=\*\/\.\(\)\{\}\[\]\s]+$/.test(text);
-
-            let finalContent = "";
-            if (!hasChinese && looksLikeFormula) {
-                // 纯公式 -> 强制数学模式
-                finalContent = `$$ ${text} $$`;
-            } else {
-                // 混合文本 -> Markdown 解析
-                finalContent = marked.parse(text);
-            }
-
-            row.innerHTML = `
-                    <div class="avatar-box">${avatarHTML}</div>
-                    <div class="msg-content">${finalContent}</div>
-                `;
-
-            chatBox.appendChild(row);
-            renderMathInElement(row, {
-                delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }],
-                throwOnError: false
-            });
-            scrollToBottom();
-        }
-
-        function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
     </script>
 </body>
 </html>
