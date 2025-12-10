@@ -31,7 +31,7 @@ echo ==========================================
 echo.
 echo 本机访问: http://localhost:8000
 echo.
-echo 局域网其他设备访问: http://10.21.156.83:8000
+echo 局域网其他设备访问: http://yourip:8000
 echo (确保你已经在 index.html 里改好了 apiBase IP)
 echo.
 echo ==========================================
